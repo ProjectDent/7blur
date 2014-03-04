@@ -104,8 +104,6 @@
 #import "UIImage+ImageEffects.h"
 #import <Accelerate/Accelerate.h>
 
-#define scaleDownFactor 4
-
 @implementation UIImage (ImageEffects)
 
 - (UIImage *)applyBlurWithCrop:(CGRect) bounds resize:(CGSize) size blurRadius:(CGFloat) blurRadius tintColor:(UIColor *) tintColor saturationDeltaFactor:(CGFloat) saturationDeltaFactor maskImage:(UIImage *) maskImage {
@@ -151,11 +149,9 @@
     CGContextDrawImage(context, CGRectMake(0, 0, sourceWidth, sourceHeight), sourceRef);
     CGContextRelease(context);
     
-    NSUInteger destWidth = (NSUInteger) size.width / scaleDownFactor;
-    NSUInteger destHeight = (NSUInteger) size.height / scaleDownFactor;
-    NSUInteger destBytesPerRow = bytesPerPixel * destWidth;
+    NSUInteger destBytesPerRow = bytesPerPixel * size.width;
     
-    unsigned char *destData = (unsigned char*) calloc(destHeight * destWidth * 4, sizeof(unsigned char));
+    unsigned char *destData = (unsigned char*) calloc(size.height * size.width * 4, sizeof(unsigned char));
     
     vImage_Buffer src = {
         .data = sourceData,
@@ -166,8 +162,8 @@
     
     vImage_Buffer dest = {
         .data = destData,
-        .height = destHeight,
-        .width = destWidth,
+        .height = size.height,
+        .width = size.width,
         .rowBytes = destBytesPerRow
     };
     
@@ -175,7 +171,7 @@
     
     free(sourceData);
     
-    CGContextRef destContext = CGBitmapContextCreate(destData, destWidth, destHeight, bitsPerComponent, destBytesPerRow, colorSpace, kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Big);
+    CGContextRef destContext = CGBitmapContextCreate(destData, size.width, size.height, bitsPerComponent, destBytesPerRow, colorSpace, kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Big);
     
     CGImageRef destRef = CGBitmapContextCreateImage(destContext);
     

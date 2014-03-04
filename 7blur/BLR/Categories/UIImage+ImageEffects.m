@@ -1,11 +1,11 @@
 /*
-     File: UIImage+ImageEffects.m
+ File: UIImage+ImageEffects.m
  Abstract: This is a category of UIImage that adds methods to apply blur and tint effects to an image. This is the code you’ll want to look out to find out how to use vImage to efficiently calculate a blur.
-  Version: 1.0
+ Version: 1.0
  
-  Version: 1.1
-   Created by JUSTIN M FISCHER on 9/02/13.
-   Copyright (c) 2013 Justin M Fischer. All rights reserved.
+ Version: 1.1
+ Created by JUSTIN M FISCHER on 9/02/13.
+ Copyright (c) 2013 Justin M Fischer. All rights reserved.
  
  Abstract: This category crops and scales image efficiently using vImage prior to applying blur.
  
@@ -107,7 +107,7 @@
 @implementation UIImage (ImageEffects)
 
 - (UIImage *)applyBlurWithCrop:(CGRect) bounds resize:(CGSize) size blurRadius:(CGFloat) blurRadius tintColor:(UIColor *) tintColor saturationDeltaFactor:(CGFloat) saturationDeltaFactor maskImage:(UIImage *) maskImage {
-
+    
     if (self.size.width < 1 || self.size.height < 1) {
         NSLog (@"*** error: invalid size: (%.2f x %.2f). Both dimensions must be >= 1: %@", self.size.width, self.size.height, self);
         return nil;
@@ -122,92 +122,102 @@
         NSLog (@"*** error: maskImage must be backed by a CGImage: %@", maskImage);
         return nil;
     }
-
+    
     //Crop
     UIImage *outputImage = nil;
-    
-    CGImageRef imageRef = CGImageCreateWithImageInRect([self CGImage], bounds);
-    outputImage = [UIImage imageWithCGImage:imageRef];
-    
-    CGImageRelease(imageRef);
+    if (bounds.origin.x != 0 || bounds.origin.y != 0 || bounds.size.width != self.size.width || bounds.size.height != self.size.height) {
+        
+        CGImageRef imageRef = CGImageCreateWithImageInRect([self CGImage], bounds);
+        outputImage = [UIImage imageWithCGImage:imageRef];
+        
+        CGImageRelease(imageRef);
+    }
+    else {
+        outputImage = self;
+    }
     
     //Re-Size
-    CGImageRef sourceRef = [outputImage CGImage];
-    NSUInteger sourceWidth = CGImageGetWidth(sourceRef);
-    NSUInteger sourceHeight = CGImageGetHeight(sourceRef);
     
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    if (size.width != self.size.width && size.height != self.size.height) {
+        
+        CGImageRef sourceRef = [outputImage CGImage];
+        NSUInteger sourceWidth = CGImageGetWidth(sourceRef);
+        NSUInteger sourceHeight = CGImageGetHeight(sourceRef);
+        
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        
+        unsigned char *sourceData = (unsigned char*) calloc(sourceHeight * sourceWidth * 4, sizeof(unsigned char));
+        
+        NSUInteger bytesPerPixel = 4;
+        NSUInteger sourceBytesPerRow = bytesPerPixel * sourceWidth;
+        NSUInteger bitsPerComponent = 8;
+        
+        CGContextRef context = CGBitmapContextCreate(sourceData, sourceWidth, sourceHeight, bitsPerComponent, sourceBytesPerRow, colorSpace, kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Big);
+        
+        CGContextDrawImage(context, CGRectMake(0, 0, sourceWidth, sourceHeight), sourceRef);
+        CGContextRelease(context);
+        
+        NSUInteger destBytesPerRow = bytesPerPixel * size.width;
+        
+        unsigned char *destData = (unsigned char*) calloc(size.height * size.width * 4, sizeof(unsigned char));
+        
+        vImage_Buffer src = {
+            .data = sourceData,
+            .height = sourceHeight,
+            .width = sourceWidth,
+            .rowBytes = sourceBytesPerRow
+        };
+        
+        vImage_Buffer dest = {
+            .data = destData,
+            .height = size.height,
+            .width = size.width,
+            .rowBytes = destBytesPerRow
+        };
+        
+        vImageScale_ARGB8888 (&src, &dest, NULL, kvImageNoInterpolation);
+        
+        free(sourceData);
+        
+        CGContextRef destContext = CGBitmapContextCreate(destData, size.width, size.height, bitsPerComponent, destBytesPerRow, colorSpace, kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Big);
+        
+        CGImageRef destRef = CGBitmapContextCreateImage(destContext);
+        
+        outputImage = [UIImage imageWithCGImage:destRef];
+        
+        CGImageRelease(destRef);
+        
+        CGColorSpaceRelease(colorSpace);
+        CGContextRelease(destContext);
+        
+        free(destData);
+    }
     
-    unsigned char *sourceData = (unsigned char*) calloc(sourceHeight * sourceWidth * 4, sizeof(unsigned char));
-    
-    NSUInteger bytesPerPixel = 4;
-    NSUInteger sourceBytesPerRow = bytesPerPixel * sourceWidth;
-    NSUInteger bitsPerComponent = 8;
-    
-    CGContextRef context = CGBitmapContextCreate(sourceData, sourceWidth, sourceHeight, bitsPerComponent, sourceBytesPerRow, colorSpace, kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Big);
-    
-    CGContextDrawImage(context, CGRectMake(0, 0, sourceWidth, sourceHeight), sourceRef);
-    CGContextRelease(context);
-    
-    NSUInteger destBytesPerRow = bytesPerPixel * size.width;
-    
-    unsigned char *destData = (unsigned char*) calloc(size.height * size.width * 4, sizeof(unsigned char));
-    
-    vImage_Buffer src = {
-        .data = sourceData,
-        .height = sourceHeight,
-        .width = sourceWidth,
-        .rowBytes = sourceBytesPerRow
-    };
-    
-    vImage_Buffer dest = {
-        .data = destData,
-        .height = size.height,
-        .width = size.width,
-        .rowBytes = destBytesPerRow
-    };
-    
-    vImageScale_ARGB8888 (&src, &dest, NULL, kvImageNoInterpolation);
-    
-    free(sourceData);
-    
-    CGContextRef destContext = CGBitmapContextCreate(destData, size.width, size.height, bitsPerComponent, destBytesPerRow, colorSpace, kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Big);
-    
-    CGImageRef destRef = CGBitmapContextCreateImage(destContext);
-    
-    outputImage = [UIImage imageWithCGImage:destRef];
-    
-    CGImageRelease(destRef);
-    
-    CGColorSpaceRelease(colorSpace);
-    CGContextRelease(destContext);
-    
-    free(destData);
+    CGRect imageRect = { CGPointZero, outputImage.size };
     
     //Blur
-    CGRect imageRect = { CGPointZero, outputImage.size };
     
     BOOL hasBlur = blurRadius > __FLT_EPSILON__;
     BOOL hasSaturationChange = fabs(saturationDeltaFactor - 1.) > __FLT_EPSILON__;
     
     if (hasBlur || hasSaturationChange) {
-    
-        UIGraphicsBeginImageContextWithOptions(outputImage.size, NO, 1);
+        
+        UIGraphicsBeginImageContextWithOptions(outputImage.size, YES, 1);
         
         CGContextRef effectInContext = UIGraphicsGetCurrentContext();
         
         CGContextScaleCTM(effectInContext, 1.0, -1.0);
         CGContextTranslateCTM(effectInContext, 0, -outputImage.size.height);
         CGContextDrawImage(effectInContext, imageRect, outputImage.CGImage);
-
+        
         vImage_Buffer effectInBuffer;
         
         effectInBuffer.data     = CGBitmapContextGetData(effectInContext);
         effectInBuffer.width    = CGBitmapContextGetWidth(effectInContext);
         effectInBuffer.height   = CGBitmapContextGetHeight(effectInContext);
         effectInBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectInContext);
-    
-        UIGraphicsBeginImageContextWithOptions(outputImage.size, NO, 1);
+        
+        UIGraphicsBeginImageContextWithOptions(outputImage.size, YES, 1);
         
         CGContextRef effectOutContext = UIGraphicsGetCurrentContext();
         vImage_Buffer effectOutBuffer;
@@ -216,7 +226,7 @@
         effectOutBuffer.width    = CGBitmapContextGetWidth(effectOutContext);
         effectOutBuffer.height   = CGBitmapContextGetHeight(effectOutContext);
         effectOutBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectOutContext);
-
+        
         if (hasBlur) {
             CGFloat inputRadius = blurRadius * 1;
             NSUInteger radius = floor(inputRadius * 3. * sqrt(2 * M_PI) / 4 + 0.5);
@@ -239,7 +249,7 @@
                 0.0722 + 0.9278 * s,  0.0722 - 0.0722 * s,  0.0722 - 0.0722 * s,  0,
                 0.7152 - 0.7152 * s,  0.7152 + 0.2848 * s,  0.7152 - 0.7152 * s,  0,
                 0.2126 - 0.2126 * s,  0.2126 - 0.2126 * s,  0.2126 + 0.7873 * s,  0,
-                                  0,                    0,                    0,  1,
+                0,                    0,                    0,  1,
             };
             
             const int32_t divisor = 256;
@@ -260,20 +270,20 @@
         
         if (!effectImageBuffersAreSwapped)
             outputImage = UIGraphicsGetImageFromCurrentImageContext();
-            UIGraphicsEndImageContext();
-
+        UIGraphicsEndImageContext();
+        
         if (effectImageBuffersAreSwapped)
             outputImage = UIGraphicsGetImageFromCurrentImageContext();
-            UIGraphicsEndImageContext();
+        UIGraphicsEndImageContext();
     }
-
-    UIGraphicsBeginImageContextWithOptions(outputImage.size, NO, 1);
+    
+    UIGraphicsBeginImageContextWithOptions(outputImage.size, YES, 1.0);
     CGContextRef outputContext = UIGraphicsGetCurrentContext();
     CGContextScaleCTM(outputContext, 1.0, -1.0);
     CGContextTranslateCTM(outputContext, 0, -outputImage.size.height);
-
+    
     CGContextDrawImage(outputContext, imageRect, outputImage.CGImage);
-
+    
     if (hasBlur) {
         CGContextSaveGState(outputContext);
         if (maskImage) {
@@ -282,17 +292,17 @@
         CGContextDrawImage(outputContext, imageRect, outputImage.CGImage);
         CGContextRestoreGState(outputContext);
     }
-
+    
     if (tintColor) {
         CGContextSaveGState(outputContext);
         CGContextSetFillColorWithColor(outputContext, tintColor.CGColor);
         CGContextFillRect(outputContext, imageRect);
         CGContextRestoreGState(outputContext);
     }
-
+    
     outputImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
-
+    
     return outputImage;
 }
 

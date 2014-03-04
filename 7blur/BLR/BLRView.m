@@ -69,21 +69,42 @@
 }
 
 - (void) blurBackground {
-    UIGraphicsBeginImageContextWithOptions(self.targetView.frame.size, NO, 0);
     
+    
+//    NSDate *start = [NSDate date];
+    
+    UIGraphicsBeginImageContextWithOptions(self.targetView.frame.size, YES, 1.0);
     [self.targetView drawViewHierarchyInRect:self.targetView.frame afterScreenUpdates:NO];
-
     __block UIImage *snapshot = UIGraphicsGetImageFromCurrentImageContext();
-    
     UIGraphicsEndImageContext();
+    
+/*
+    UIGraphicsBeginImageContextWithOptions(self.targetView.bounds.size,YES, 1.0);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    [self.targetView.layer renderInContext:context];
+    __block UIImage *snapshot = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();*/
+    
+    
+//    NSDate *end = [NSDate date];
+    
+    
+//    NSLog(@"difference: %f", [end timeIntervalSince1970] - [start timeIntervalSince1970]);
+    
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         
+//        UIGraphicsBeginImageContextWithOptions(self.targetView.bounds.size,YES, 1.0);
+//        CGContextRef context = UIGraphicsGetCurrentContext();
+//        [self.targetView.layer renderInContext:context];
+//        __block UIImage *snapshot = UIGraphicsGetImageFromCurrentImageContext();
+//        UIGraphicsEndImageContext();
+        
         //Blur finished in 0.004884 seconds.
         float scale = [UIScreen mainScreen].scale;
-        CGRect bounds = CGRectMake(0, 0, snapshot.size.width * scale, snapshot.size.height * scale);
+        CGRect bounds = CGRectMake(0, 0, snapshot.size.width, snapshot.size.height);
         
-        snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:self.colorComponents.radius * scale tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor maskImage:self.colorComponents.maskImage];
+        snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:1 tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor maskImage:self.colorComponents.maskImage];
         
         dispatch_sync(dispatch_get_main_queue(), ^{
             self.image = snapshot;

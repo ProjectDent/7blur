@@ -73,7 +73,7 @@
 }
 
 - (void) blurBackground {
-    UIGraphicsBeginImageContextWithOptions(self.targetView.frame.size, NO, 1);
+    UIGraphicsBeginImageContextWithOptions(self.targetView.frame.size, NO, 0);
     
     //Snapshot finished in 0.051982 seconds.
     self.alpha = 0;
@@ -88,7 +88,8 @@
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         
         //Blur finished in 0.004884 seconds.
-        CGRect bounds = CGRectMake(0, 0, snapshot.size.width, snapshot.size.height);
+        float scale = [UIScreen mainScreen].scale;
+        CGRect bounds = CGRectMake(0, 0, snapshot.size.width * scale, snapshot.size.height * scale);
         
         snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:self.colorComponents.radius tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor maskImage:self.colorComponents.maskImage];
         

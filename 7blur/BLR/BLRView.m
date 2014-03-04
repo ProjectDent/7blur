@@ -104,7 +104,7 @@
         float scale = [UIScreen mainScreen].scale;
         CGRect bounds = CGRectMake(0, 0, snapshot.size.width, snapshot.size.height);
         
-        snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:1 tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor maskImage:self.colorComponents.maskImage];
+        snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:self.colorComponents.radius tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor maskImage:self.colorComponents.maskImage];
         
         dispatch_sync(dispatch_get_main_queue(), ^{
             self.image = snapshot;
@@ -142,12 +142,12 @@ dispatch_source_t CreateDispatchTimer(uint64_t interval, uint64_t leeway, dispat
     
     return timer;
 }
-
+/*
 -(void)setTargetView:(UIView *)targetView {
     _targetView = targetView;
     
     [targetView.superview addSubview:self];
-}
+}*/
 
 @end
 

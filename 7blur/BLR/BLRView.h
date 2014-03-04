@@ -35,7 +35,7 @@ typedef enum {
 
 /// A UIView subclass that supports live real time and static blurs. See https://github.com/justinmfischer/7blur
 ///
-@interface BLRView : UIView
+@interface BLRView : UIImageView
 
 @property (nonatomic, strong) UIView *targetView;
 

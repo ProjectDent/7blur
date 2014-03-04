@@ -32,7 +32,6 @@
 
 @property(nonatomic, assign) BlurType blurType;
 @property(nonatomic, strong) BLRColorComponents *colorComponents;
-@property(nonatomic, strong) IBOutlet UIImageView *backgroundImageView;
 @property(nonatomic, strong) dispatch_source_t timer;
 
 @end
@@ -64,10 +63,7 @@
 }
 
 -(void)initialSetupBLRView {
-    self.backgroundImageView = [[UIImageView alloc] init];
-    self.backgroundImageView.frame = self.bounds;
-    self.backgroundImageView.contentMode = UIViewContentModeScaleAspectFit;
-    [self addSubview:self.backgroundImageView];
+    self.contentMode = UIViewContentModeScaleAspectFit;
     
     self.userInteractionEnabled = NO;
 }
@@ -75,15 +71,11 @@
 - (void) blurBackground {
     UIGraphicsBeginImageContextWithOptions(self.targetView.frame.size, NO, 0);
     
-    //Snapshot finished in 0.051982 seconds.
-    self.alpha = 0;
     [self.targetView drawViewHierarchyInRect:self.targetView.frame afterScreenUpdates:NO];
 
     __block UIImage *snapshot = UIGraphicsGetImageFromCurrentImageContext();
     
     UIGraphicsEndImageContext();
-    
-    self.alpha = 1;
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         
@@ -91,18 +83,12 @@
         float scale = [UIScreen mainScreen].scale;
         CGRect bounds = CGRectMake(0, 0, snapshot.size.width * scale, snapshot.size.height * scale);
         
-        snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:self.colorComponents.radius tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor maskImage:self.colorComponents.maskImage];
+        snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:self.colorComponents.radius * scale tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor maskImage:self.colorComponents.maskImage];
         
         dispatch_sync(dispatch_get_main_queue(), ^{
-            self.backgroundImageView.image = snapshot;
+            self.image = snapshot;
         });
     });
-}
-
--(void)setFrame:(CGRect)frame {
-    [super setFrame:frame];
-    
-    self.backgroundImageView.frame = self.bounds;
 }
 
 - (void) blurWithColor:(BLRColorComponents *) components {

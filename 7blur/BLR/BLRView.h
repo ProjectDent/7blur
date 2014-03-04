@@ -37,39 +37,7 @@ typedef enum {
 ///
 @interface BLRView : UIView
 
-@property(nonatomic, strong) IBOutlet UITextView *textView;
-@property(nonatomic, strong) IBOutlet UIView *gripBarView;
-
-/// Drop down menu style.
-///
-/// @param UIView as background content
-/// @return A newly created BLRView instance
-+ (BLRView *) load:(UIView *) view;
-
-///Fixed position style.
-///
-/// @param Location CGPoint point
-/// @param Parent UIView as background content
-/// @return A newly created BLRView instance
-+ (BLRView *) loadWithLocation:(CGPoint) point parent:(UIView *) view;
-
-///Remove.
-///
-/// @brief Invalidates timers and removes view from superview.
-/// @return void
-- (void) unload;
-
-///Down.
-///
-/// @brief Slides down drop down menu into place.
-/// @return void
-- (void) slideDown;
-
-///Up.
-///
-/// @brief Slides up drop down menu.
-/// @return void
-- (void) slideUp;
+@property (nonatomic, strong) UIView *targetView;
 
 ///Static blur.
 ///

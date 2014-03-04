@@ -74,7 +74,7 @@
 //    NSDate *start = [NSDate date];
     
     UIGraphicsBeginImageContextWithOptions(self.targetView.frame.size, YES, 1.0);
-    [self.targetView drawViewHierarchyInRect:self.targetView.frame afterScreenUpdates:NO];
+    [self.targetView drawViewHierarchyInRect:self.targetView.bounds afterScreenUpdates:NO];
     __block UIImage *snapshot = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     

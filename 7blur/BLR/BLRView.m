@@ -70,7 +70,8 @@
 
 - (void) blurBackgroundWithCompletion:(void (^)(UIImage *image))completion {
     
-    UIGraphicsBeginImageContextWithOptions(self.targetView.frame.size, YES, 1.0);
+    
+    UIGraphicsBeginImageContextWithOptions(self.targetView.frame.size, YES, 0);
     [self.targetView drawViewHierarchyInRect:self.targetView.bounds afterScreenUpdates:NO];
     __block UIImage *snapshot = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
@@ -83,9 +84,11 @@
     UIGraphicsEndImageContext();*/
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        CGRect bounds = CGRectMake(0, 0, snapshot.size.width, snapshot.size.height);
         
-        snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:self.colorComponents.radius tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor maskImage:self.colorComponents.maskImage];
+        float scale = [UIScreen mainScreen].scale;
+        CGRect bounds = CGRectMake(0, 0, snapshot.size.width * scale, snapshot.size.height * scale);
+        
+        snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:self.colorComponents.radius * scale tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor maskImage:self.colorComponents.maskImage];
         
         dispatch_sync(dispatch_get_main_queue(), ^{
             self.image = snapshot;

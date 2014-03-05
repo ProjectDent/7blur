@@ -70,6 +70,10 @@
 
 - (void) blurBackgroundWithCompletion:(void (^)(UIImage *image))completion {
     
+    if ([[UIApplication sharedApplication] applicationState] != UIApplicationStateActive) {
+        completion(nil);
+        return;
+    }
     
     UIGraphicsBeginImageContextWithOptions(self.targetView.frame.size, YES, 0);
     [self.targetView drawViewHierarchyInRect:self.targetView.bounds afterScreenUpdates:NO];

@@ -45,6 +45,7 @@ typedef enum {
 /// @param BLRColorComponents as blur components
 /// @return void
 - (void) blurWithColor:(BLRColorComponents *) components;
+- (void) blurWithColor:(BLRColorComponents *) components completion:(void (^)(UIImage *image))completion;
 
 //Live real time blur.
 ///

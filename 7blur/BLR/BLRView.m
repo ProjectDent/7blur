@@ -68,10 +68,7 @@
     self.userInteractionEnabled = NO;
 }
 
-- (void) blurBackground {
-    
-    
-//    NSDate *start = [NSDate date];
+- (void) blurBackgroundWithCompletion:(void (^)(UIImage *image))completion {
     
     UIGraphicsBeginImageContextWithOptions(self.targetView.frame.size, YES, 1.0);
     [self.targetView drawViewHierarchyInRect:self.targetView.bounds afterScreenUpdates:NO];
@@ -85,41 +82,36 @@
     __block UIImage *snapshot = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();*/
     
-    
-//    NSDate *end = [NSDate date];
-    
-    
-//    NSLog(@"difference: %f", [end timeIntervalSince1970] - [start timeIntervalSince1970]);
-    
-    
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        
-//        UIGraphicsBeginImageContextWithOptions(self.targetView.bounds.size,YES, 1.0);
-//        CGContextRef context = UIGraphicsGetCurrentContext();
-//        [self.targetView.layer renderInContext:context];
-//        __block UIImage *snapshot = UIGraphicsGetImageFromCurrentImageContext();
-//        UIGraphicsEndImageContext();
-        
-        //Blur finished in 0.004884 seconds.
-        float scale = [UIScreen mainScreen].scale;
         CGRect bounds = CGRectMake(0, 0, snapshot.size.width, snapshot.size.height);
         
         snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:self.colorComponents.radius tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor maskImage:self.colorComponents.maskImage];
         
         dispatch_sync(dispatch_get_main_queue(), ^{
             self.image = snapshot;
+            if (completion) {
+                completion(snapshot);
+            }
         });
     });
 }
 
 - (void) blurWithColor:(BLRColorComponents *) components {
+    [self blurWithColor:components completion:nil];
+}
+
+- (void) blurWithColor:(BLRColorComponents *) components completion:(void (^)(UIImage *image))completion {
     if(self.blurType == KBlurUndefined) {
         
         self.blurType = KStaticBlur;
         self.colorComponents = components;
     }
     
-    [self blurBackground];
+    [self blurBackgroundWithCompletion:^(UIImage *image) {
+        if (completion) {
+            completion(image);
+        }
+    }];
 }
 
 - (void) blurWithColor:(BLRColorComponents *) components updateInterval:(float) interval {

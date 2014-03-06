@@ -75,8 +75,11 @@
         return;
     }
     
-    UIGraphicsBeginImageContextWithOptions(self.targetView.frame.size, YES, 0);
-    [self.targetView drawViewHierarchyInRect:self.targetView.bounds afterScreenUpdates:NO];
+    float scale = [UIScreen mainScreen].scale;
+    
+    UIGraphicsBeginImageContextWithOptions(self.targetView.frame.size, YES, scale);
+    [self.targetView drawViewHierarchyInRect:self.targetView.bounds
+                          afterScreenUpdates:NO];
     __block UIImage *snapshot = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     
@@ -89,10 +92,13 @@
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         
-        float scale = [UIScreen mainScreen].scale;
+        //CGRect bounds = CGRectMake(0, 0, snapshot.size.width * scale, snapshot.size.height * scale);
+        
         CGRect bounds = CGRectMake(0, 0, snapshot.size.width * scale, snapshot.size.height * scale);
         
         snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:self.colorComponents.radius * scale tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor maskImage:self.colorComponents.maskImage];
+        
+        snapshot = [snapshot initWithCGImage:snapshot.CGImage scale:scale orientation:UIImageOrientationUp];
         
         dispatch_sync(dispatch_get_main_queue(), ^{
             self.image = snapshot;

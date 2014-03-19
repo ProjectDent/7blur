@@ -204,6 +204,16 @@
     
     CGRect originalImageRect = { CGPointZero, outputImage.size };
     
+    if (tintColor && tintColor != [UIColor clearColor]) {
+        UIGraphicsBeginImageContextWithOptions(outputImage.size, NO, 0.f);
+        [tintColor set];
+        UIRectFill(CGRectMake(0, 0, outputImage.size.width, outputImage.size.height));
+        outputImage = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+    }
+    
+    UIImageWriteToSavedPhotosAlbum(outputImage, nil, nil, nil);
+    
     CGRect imageRect;
     
     BOOL hasBlur = blurRadius > __FLT_EPSILON__;
@@ -317,13 +327,13 @@
         CGContextDrawImage(outputContext, imageRect, outputImage.CGImage);
         CGContextRestoreGState(outputContext);
     }
-    
-    if (tintColor) {
-        CGContextSaveGState(outputContext);
-        CGContextSetFillColorWithColor(outputContext, tintColor.CGColor);
-        CGContextFillRect(outputContext, imageRect);
-        CGContextRestoreGState(outputContext);
-    }
+//    
+//    if (tintColor) {
+//        CGContextSaveGState(outputContext);
+//        CGContextSetFillColorWithColor(outputContext, tintColor.CGColor);
+//        CGContextFillRect(outputContext, imageRect);
+//        CGContextRestoreGState(outputContext);
+//    }
     
     outputImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();

@@ -106,16 +106,16 @@
 
 @implementation UIImage (ImageEffects)
 
-- (UIImage *)applyBlurWithBlurRadius:(CGFloat) blurRadius tintColor:(UIColor *) tintColor saturationDeltaFactor:(CGFloat) saturationDeltaFactor {
-    return [self applyBlurWithBlurRadius:blurRadius tintColor:tintColor saturationDeltaFactor:saturationDeltaFactor maskImage:nil];
+- (UIImage *)applyBlurWithBlurRadius:(CGFloat) blurRadius tintColor:(UIColor *) tintColor saturationDeltaFactor:(CGFloat) saturationDeltaFactor blurredEdges:(BOOL)blurredEdges {
+    return [self applyBlurWithBlurRadius:blurRadius tintColor:tintColor saturationDeltaFactor:saturationDeltaFactor blurredEdges:blurredEdges maskImage:nil];
 }
 
-- (UIImage *)applyBlurWithBlurRadius:(CGFloat) blurRadius tintColor:(UIColor *) tintColor saturationDeltaFactor:(CGFloat) saturationDeltaFactor maskImage:(UIImage *) maskImage {
+- (UIImage *)applyBlurWithBlurRadius:(CGFloat) blurRadius tintColor:(UIColor *) tintColor saturationDeltaFactor:(CGFloat) saturationDeltaFactor blurredEdges:(BOOL)blurredEdges maskImage:(UIImage *) maskImage {
     CGRect rect = CGRectMake(0, 0, self.size.width, self.size.height);
-    return [self applyBlurWithCrop:rect resize:rect.size blurRadius:blurRadius tintColor:tintColor saturationDeltaFactor:saturationDeltaFactor maskImage:maskImage];
+    return [self applyBlurWithCrop:rect resize:rect.size blurRadius:blurRadius tintColor:tintColor saturationDeltaFactor:saturationDeltaFactor blurredEdges:blurredEdges maskImage:maskImage];
 }
 
-- (UIImage *)applyBlurWithCrop:(CGRect) bounds resize:(CGSize) size blurRadius:(CGFloat) blurRadius tintColor:(UIColor *) tintColor saturationDeltaFactor:(CGFloat) saturationDeltaFactor maskImage:(UIImage *) maskImage {
+- (UIImage *)applyBlurWithCrop:(CGRect) bounds resize:(CGSize) size blurRadius:(CGFloat) blurRadius tintColor:(UIColor *) tintColor saturationDeltaFactor:(CGFloat) saturationDeltaFactor blurredEdges:(BOOL)blurredEdges maskImage:(UIImage *) maskImage {
     
     if (self.size.width < 1 || self.size.height < 1) {
         NSLog (@"*** error: invalid size: (%.2f x %.2f). Both dimensions must be >= 1: %@", self.size.width, self.size.height, self);
@@ -202,16 +202,32 @@
         free(destData);
     }
     
-    CGRect imageRect = { CGPointZero, outputImage.size };
+    CGRect originalImageRect = { CGPointZero, outputImage.size };
     
-    //Blur
+    CGRect imageRect;
     
     BOOL hasBlur = blurRadius > __FLT_EPSILON__;
     BOOL hasSaturationChange = fabs(saturationDeltaFactor - 1.) > __FLT_EPSILON__;
+    BOOL opaque = YES;
+    
+    if (hasBlur && blurredEdges) {
+        opaque = NO;
+        CGSize size = outputImage.size;
+        UIGraphicsBeginImageContextWithOptions(CGSizeMake(size.width + (blurRadius * 8), size.height + (blurRadius * 8)), NO, 0);
+        [outputImage drawInRect:CGRectMake(blurRadius * 4, blurRadius * 4, size.width, size.height)];
+        outputImage = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+        
+        imageRect = CGRectMake(0, 0, outputImage.size.width, outputImage.size.height);
+    } else {
+        imageRect = originalImageRect;
+    }
+    
+    //Blur
     
     if (hasBlur || hasSaturationChange) {
         
-        UIGraphicsBeginImageContextWithOptions(outputImage.size, YES, 1);
+        UIGraphicsBeginImageContextWithOptions(outputImage.size, opaque, 1);
         
         CGContextRef effectInContext = UIGraphicsGetCurrentContext();
         
@@ -226,7 +242,7 @@
         effectInBuffer.height   = CGBitmapContextGetHeight(effectInContext);
         effectInBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectInContext);
         
-        UIGraphicsBeginImageContextWithOptions(outputImage.size, YES, 1);
+        UIGraphicsBeginImageContextWithOptions(outputImage.size, opaque, 1);
         
         CGContextRef effectOutContext = UIGraphicsGetCurrentContext();
         vImage_Buffer effectOutBuffer;
@@ -286,10 +302,10 @@
         UIGraphicsEndImageContext();
     }
     
-    UIGraphicsBeginImageContextWithOptions(outputImage.size, YES, 1.0);
+    UIGraphicsBeginImageContextWithOptions(imageRect.size, opaque, 1.0);
     CGContextRef outputContext = UIGraphicsGetCurrentContext();
     CGContextScaleCTM(outputContext, 1.0, -1.0);
-    CGContextTranslateCTM(outputContext, 0, -outputImage.size.height);
+    CGContextTranslateCTM(outputContext, 0, -imageRect.size.height);
     
     CGContextDrawImage(outputContext, imageRect, outputImage.CGImage);
     

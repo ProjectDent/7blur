@@ -106,6 +106,15 @@
 
 @implementation UIImage (ImageEffects)
 
+- (UIImage *)applyBlurWithBlurRadius:(CGFloat) blurRadius tintColor:(UIColor *) tintColor saturationDeltaFactor:(CGFloat) saturationDeltaFactor {
+    return [self applyBlurWithBlurRadius:blurRadius tintColor:tintColor saturationDeltaFactor:saturationDeltaFactor maskImage:nil];
+}
+
+- (UIImage *)applyBlurWithBlurRadius:(CGFloat) blurRadius tintColor:(UIColor *) tintColor saturationDeltaFactor:(CGFloat) saturationDeltaFactor maskImage:(UIImage *) maskImage {
+    CGRect rect = CGRectMake(0, 0, self.size.width, self.size.height);
+    return [self applyBlurWithCrop:rect resize:rect.size blurRadius:blurRadius tintColor:tintColor saturationDeltaFactor:saturationDeltaFactor maskImage:maskImage];
+}
+
 - (UIImage *)applyBlurWithCrop:(CGRect) bounds resize:(CGSize) size blurRadius:(CGFloat) blurRadius tintColor:(UIColor *) tintColor saturationDeltaFactor:(CGFloat) saturationDeltaFactor maskImage:(UIImage *) maskImage {
     
     if (self.size.width < 1 || self.size.height < 1) {

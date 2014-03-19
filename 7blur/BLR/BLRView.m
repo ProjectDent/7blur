@@ -63,7 +63,7 @@
 }
 
 -(void)initialSetupBLRView {
-    self.contentMode = UIViewContentModeScaleAspectFit;
+    self.contentMode = UIViewContentModeCenter;
     
     self.userInteractionEnabled = NO;
 }
@@ -96,7 +96,7 @@
         
         CGRect bounds = CGRectMake(0, 0, snapshot.size.width * scale, snapshot.size.height * scale);
         
-        snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:self.colorComponents.radius * scale tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor blurredEdges:NO maskImage:self.colorComponents.maskImage];
+        snapshot = [snapshot applyBlurWithCrop:bounds resize:bounds.size blurRadius:self.colorComponents.radius * scale tintColor:self.colorComponents.tintColor saturationDeltaFactor:self.colorComponents.saturationDeltaFactor blurredEdges:YES maskImage:self.colorComponents.maskImage];
         
         snapshot = [snapshot initWithCGImage:snapshot.CGImage scale:scale orientation:UIImageOrientationUp];
         

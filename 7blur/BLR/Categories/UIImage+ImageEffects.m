@@ -206,13 +206,13 @@
     
     if (tintColor && tintColor != [UIColor clearColor]) {
         UIGraphicsBeginImageContextWithOptions(outputImage.size, NO, 0.f);
+        [outputImage drawInRect:originalImageRect];
         [tintColor set];
-        UIRectFill(CGRectMake(0, 0, outputImage.size.width, outputImage.size.height));
+        UIRectFillUsingBlendMode(originalImageRect, kCGBlendModeNormal);
+        //UIRectFill(CGRectMake(0, 0, outputImage.size.width, outputImage.size.height));
         outputImage = UIGraphicsGetImageFromCurrentImageContext();
         UIGraphicsEndImageContext();
     }
-    
-    UIImageWriteToSavedPhotosAlbum(outputImage, nil, nil, nil);
     
     CGRect imageRect;
     
